@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  reverse-proxy:
+    image: traefik
+    # Enables the web UI and tells Traefik to listen to docker
+    command: --providers.docker
+    ports:
+      # The HTTP port
+      - "5520:80"
+      # The Web UI (enabled by --api.insecure=true)
+      - "8080:8080"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  app:
+    build: .
+    labels:
+          - "traefik.http.routers.app.rule=Host(`app`)"
+          - "traefik.http.routers.app.rule=PathPrefix(`/`)"
+          - "traefik.http.services.app.loadBalancer.sticky.cookie=true"
+
+    deploy:
+      replicas: 2
